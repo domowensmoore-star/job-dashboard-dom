@@ -1,0 +1,33 @@
+name: Daily job dashboard
+
+on:
+  schedule:
+    - cron: "0 14 * * *"
+    - cron: "0 21 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build dashboard
+        run: python dashboard.py
+        env:
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+      - name: Save results
+        run: |
+          git config user.name "jobbot"
+          git config user.email "jobbot@users.noreply.github.com"
+          git add docs
+          if ! git diff --cached --quiet; then
+            git commit -m "Update dashboard"
+            git push
+          fi
